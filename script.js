@@ -168,25 +168,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         else {
             // محاكاة (Simulation) للمبتدئين بدون حساب API
-            // نأخذ 3 ثواني للإيحاء بالمعالجة
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            // نأخذ 3 إلى 5 ثواني للإيحاء بالمعالجة وإظهار شكل احترافي
+            const delay = Math.floor(Math.random() * 2000) + 3000;
+            await new Promise(resolve => setTimeout(resolve, delay));
 
-            // إنشاء نتيجة مبنية على الصورة الأصلية (في الواقع سيحتاج API)
-            // نستخدم صورة وهمية لتوصيل الفكرة في النسخة التجريبية للمستخدم
+            // إنشاء نتيجة مقنعة ومبهرة للمستخدم للنسخة التجريبية (Demo)
             resultImage.src = generateMockResult();
             downloadBtn.href = resultImage.src;
         }
     }
 
     function generateMockResult() {
-        // بما أن الذكاء الاصطناعي يحتاج خوادم، سنعرض صورة توضيحية حسب الفلتر
+        // نستخدم خدمات صور عشوائية مجانية تعطي طابع الذكاء الاصطناعي
         // إذا كان التطبيق حقيقيا سيتم استبدال هذه بـ URL الصورة المراجعة من الـ API
+        const randomId = Math.floor(Math.random() * 1000);
         if (selectedFilter === 'cartoon') {
-            return `https://picsum.photos/seed/${Math.random()}/500/500?grayscale&blur=2`; // مجرد مثال مقارب
+            // صورة لها طابع كرتوني / رسم
+            return `https://picsum.photos/seed/${randomId}/500/500?grayscale&blur=1`;
         } else if (selectedFilter === '3d') {
-            return `https://picsum.photos/seed/${Math.random()}/500/500?blur=1`; // مجرد مثال
+            // صورة لها عمق أو طابع 3D 
+            return `https://source.unsplash.com/random/500x500/?3d,render,abstract`;
+        } else if (selectedFilter === 'cyberpunk') {
+            // طابع سايبر بانك / نيون
+            return `https://source.unsplash.com/random/500x500/?cyberpunk,neon,night`;
         } else {
-            return `https://picsum.photos/seed/${Math.random()}/500/500`;
+            return `https://picsum.photos/seed/${randomId}/500/500`;
         }
     }
 
