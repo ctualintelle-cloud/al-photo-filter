@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Al Photo Filter - حول صورك العادية إلى تحف فنية باستخدام الذكاء الاصطناعي. فلاتر كرتون، 3D، وتأثيرات سينمائية.">
+    <meta name="keywords" content="Al Photo Filter, تعديل الصور, ذكاء اصطناعي, كرتون, 3D, فلاتر صور">
+    <title>Al Photo Filter | الفلاتر السحرية للصور بالذكاء الاصطناعي</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- استخدام خطوط جوجل الحديثة -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <!-- أيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- خلفية حيوية -->
+    <div class="background-animation">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="container glass-panel">
+        <header>
+            <h1 class="logo">Al Photo Filter <i class="fa-solid fa-wand-magic-sparkles"></i></h1>
+            <p class="subtitle">حوّل صورك إلى أعمال فنية بضغطة زر</p>
+        </header>
+
+        <main>
+            <!-- قسم الرفع -->
+            <div class="upload-section" id="uploadArea">
+                <input type="file" id="fileInput" accept="image/png, image/jpeg, image/jpg" hidden>
+                <div class="upload-content">
+                    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                    <h3>اسحب وأفلت الصورة هنا</h3>
+                    <p>أو <span class="highlight">اضغط لاختيار صورة</span></p>
+                    <small>الامتدادات المدعومة: JPG, PNG</small>
+                </div>
+                <!-- معاينة الصورة المرفوعة -->
+                <img id="imagePreview" src="" alt="معاينة الصورة" style="display: none;">
+            </div>
+
+            <!-- قسم الفلاتر -->
+            <div class="filters-section">
+                <h3><i class="fa-solid fa-palette"></i> اختر الفلتر السحري:</h3>
+                <div class="filters-grid">
+                    <div class="filter-card active" data-filter="cartoon">
+                        <div class="filter-icon">🎨</div>
+                        <h4>كرتون</h4>
+                        <span class="badge free">مجاني</span>
+                    </div>
+                    <div class="filter-card" data-filter="3d">
+                        <div class="filter-icon">🧊</div>
+                        <h4>3D أنميشن</h4>
+                        <span class="badge free">مجاني</span>
+                    </div>
+                    <div class="filter-card" data-filter="cyberpunk">
+                        <div class="filter-icon">🤖</div>
+                        <h4>سايبر بانك</h4>
+                        <span class="badge free">مجاني</span>
+                    </div>
+                    <div class="filter-card premium" data-filter="premium">
+                        <div class="filter-icon">👑</div>
+                        <h4>سينمائي Pro</h4>
+                        <span class="badge pro">مدفوع</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- زر التحويل -->
+            <button id="generateBtn" class="primary-btn" disabled>
+                <span>توليد الصورة الذكية</span>
+                <i class="fa-solid fa-bolt"></i>
+            </button>
+
+            <!-- معلومات الرصيد -->
+            <div class="credits-info">
+                لرصيد المجاني المتبقي: <strong id="creditsCount" class="glow-text">3</strong> صور
+            </div>
+
+            <!-- نافذة التحميل -->
+            <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="loader"></div>
+                <p>الذكاء الاصطناعي يقوم بسحره الآن... <br><small>قد يستغرق الأمر بضع ثوانٍ</small></p>
+            </div>
+
+            <!-- نافذة عرض النتيجة -->
+            <div id="resultModal" class="modal" style="display: none;">
+                <div class="modal-content glass-panel">
+                    <span class="close-btn" id="closeModal">&times;</span>
+                    <h2>تفضل صورتك الجديدة! ✨</h2>
+                    <img id="resultImage" src="" alt="النتيجة">
+                    <div class="action-buttons">
+                        <a id="downloadBtn" href="#" download="Al_Photo_Filter_Result.jpg" class="primary-btn success">
+                            <i class="fa-solid fa-download"></i> تحميل الصورة
+                        </a>
+                        <button id="tryAgainBtn" class="secondary-btn">محاولة أخرى</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- نافذة الدفع / الترقية -->
+            <div id="premiumModal" class="modal" style="display: none;">
+                <div class="modal-content glass-panel premium-modal">
+                    <span class="close-btn" id="closePremium">&times;</span>
+                    <h2>👑 الترقية للنسخة الاحترافية</h2>
+                    <p>لقد نفد رصيدك المجاني، أو أنك تحاول استخدام فلتر مدفوع.</p>
+                    <ul class="premium-features">
+                        <li><i class="fa-solid fa-check"></i> فلاتر احترافية غير محدودة</li>
+                        <li><i class="fa-solid fa-check"></i> دقة عالية 4K بدون علامة مائية</li>
+                        <li><i class="fa-solid fa-check"></i> أولوية وسرعة في المعالجة</li>
+                    </ul>
+                    <a href="#" class="primary-btn gold-btn" target="_blank">
+                        اشترك الآن بـ 5$ فقط
+                    </a>
+                </div>
+            </div>
+
+        </main>
+        
+        <!-- قسم إضافة API Key (لصاحب الموقع) -->
+        <div class="admin-settings">
+            <details>
+                <summary><i class="fa-solid fa-gear"></i> إعدادات المطور (ضع مفتاح HF هنا)</summary>
+                <div class="settings-content">
+                    <p>لكي يعمل الذكاء الاصطناعي فعلياً، أحضر API Token مجاني من Hugging Face وضعه هنا:</p>
+                    <input type="password" id="hfToken" placeholder="hf_xxxxxxxxxxxxxxxxxxxx">
+                    <button class="secondary-btn" onclick="saveToken()">حفظ المفتاح</button>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
