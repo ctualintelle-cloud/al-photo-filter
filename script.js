@@ -125,8 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
             resultModal.style.display = 'flex';
 
         } catch (error) {
+            console.error('حدث خطأ غير متوقع:', error);
+            // في حالة حدوث خطأ كارثي غير متوقع نهائياً، أظهر الصورة الأصلية بدلاً من التوقف
+            resultImage.src = imagePreview.src;
+            downloadBtn.href = imagePreview.src;
+            downloadBtn.download = `Original_Fallback.jpg`;
+            downloadBtn.removeAttribute('target');
+
             loadingOverlay.style.display = 'none';
-            alert('حدث خطأ أثناء معالجة الصورة: ' + error.message);
+            resultModal.style.display = 'flex';
         }
     });
 
