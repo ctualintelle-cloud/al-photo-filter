@@ -23,11 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedFilter = 'cartoon'; // الفلتر الافتراضي
     let isPremiumSelected = false;
 
-    // --- نظام الرصيد (الرصيد المجاني 3) ---
-    let credits = localStorage.getItem('al_photo_credits');
+    // --- نظام الرصيد (الرصيد المجاني 10) ---
+    let credits = localStorage.getItem('al_photo_credits_v2');
     if (credits === null) {
-        credits = 3;
-        localStorage.setItem('al_photo_credits', credits);
+        credits = 10;
+        localStorage.setItem('al_photo_credits_v2', credits);
     }
     creditsCountEl.innerText = credits;
 
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // خصم رصيد (فقط في حال لم يكن المدفوع ولم يكن هناك خطأ)
             credits--;
-            localStorage.setItem('al_photo_credits', credits);
+            localStorage.setItem('al_photo_credits_v2', credits);
             creditsCountEl.innerText = credits;
 
             // إخفاء التحميل وإظهار النتيجة
@@ -169,50 +169,129 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadBtn.href = imageUrl;
 
         } catch (error) {
-            console.log("الذكاء الاصطناعي الحقيقي يتطلب مفتاح API مدفوع، سيتم استخدام وضع الديمو...", error);
+            console.log("الـ API الحقيقي يفشل حالياً، سنقوم بمعالجة صورة المستخدم محلياً لمحاكات الفلتر...", error);
 
-            // تأخير بسيط لمحاكاة المعالجة
-            const delay = Math.floor(Math.random() * 2000) + 1500;
+            // تأخير بسيط لمحاكاة المعالجة السحابية
+            const delay = Math.floor(Math.random() * 1500) + 1000;
             await new Promise(resolve => setTimeout(resolve, delay));
 
-            const mockUrl = generateMockResult();
-
             try {
-                // جلب الصورة كـ Blob لمنع أخطاء CORS عند التحميل
-                const mockResponse = await fetch(mockUrl);
-                const mockBlob = await mockResponse.blob();
-                const mockObjectURL = URL.createObjectURL(mockBlob);
+                // استخدام الصورة المرفوعة وتطبيق فلاتر عليها باستخدام Canvas لضمان أنها نفس صورة المستخدم تماماً
+                const filteredImageUrl = await applyCanvasFilter(imagePreview.src, selectedFilter);
 
-                resultImage.src = mockObjectURL;
+                resultImage.src = filteredImageUrl;
+
                 // إعداد زر التحميل
-                downloadBtn.href = mockObjectURL;
+                downloadBtn.href = filteredImageUrl;
                 downloadBtn.download = `Al_Photo_Filter_${selectedFilter}.jpg`;
                 downloadBtn.removeAttribute('target');
-            } catch (fetchError) {
-                // خطة بديلة لو فشل الـ Fetch
-                console.error("فشل جلب الصورة كـ Blob: ", fetchError);
-                resultImage.src = mockUrl;
-                downloadBtn.href = mockUrl;
-                downloadBtn.target = "_blank";
-                downloadBtn.download = '';
+            } catch (canvasError) {
+                console.error("فشل معالجة الصورة: ", canvasError);
+                // الخطة البديلة: إرجاع نفس الصورة بدون تعديل
+                resultImage.src = imagePreview.src;
+                downloadBtn.href = imagePreview.src;
+                downloadBtn.download = `Original_${selectedFilter}.jpg`;
             }
         }
     }
 
-    function generateMockResult() {
-        // استخدام خدمة مستقرة لصور الديمو
-        const randomId = Math.floor(Math.random() * 1000);
-        let url = `https://picsum.photos/seed/${randomId}/500/500`;
+    // تطبيق فلاتر متقدمة واحترافية (قاهرة) محلياً لمحاكاة الذكاء الاصطناعي بدقة عالية
+    function applyCanvasFilter(imageSrc, filterType) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous"; // لتجنب مشاكل الـ Canvas CORS لو وجدت
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
 
-        if (selectedFilter === 'cartoon') {
-            url = `https://picsum.photos/seed/${randomId}/500/500?grayscale&blur=1`;
-        } else if (selectedFilter === '3d') {
-            url = `https://picsum.photos/seed/${randomId}/500/500?blur=2`;
-        } else if (selectedFilter === 'cyberpunk') {
-            url = `https://picsum.photos/seed/${randomId}/500/500?grayscale`;
-        }
+                // --- 1. التأثير الأساسي ---
+                let cssFilter = "none";
+                if (filterType === 'cartoon') {
+                    // زيادة التباين بشدة وتقليل التفاصيل الدقيقة لمحاكاة الرسم الكرتوني 
+                    cssFilter = 'saturate(1.8) contrast(1.5) blur(0.5px)';
+                } else if (filterType === '3d') {
+                    // تعزيز الظلال وتوضيح الحواف والتباين لخلق عمق يشبه 3D
+                    cssFilter = 'saturate(1.4) contrast(1.3) drop-shadow(4px 4px 8px rgba(0,0,0,0.6)) brightness(1.1)';
+                } else if (filterType === 'cyberpunk') {
+                    // عكس ألوان خفيف، تباين عالي جداً، سطوع خفيف، دوران الألوان بقوة
+                    cssFilter = 'saturate(2.5) contrast(1.6) brightness(0.8) hue-rotate(150deg)';
+                }
 
-        return url;
+                ctx.filter = cssFilter;
+                ctx.drawImage(img, 0, 0);
+
+                // --- 2. الإضافات الاحترافية والتأثيرات اللونية (Blending) ---
+                ctx.filter = 'none';
+
+                if (filterType === 'cartoon') {
+                    // إضافة طبقة دافئة وحواف شبه واضحة
+                    ctx.globalCompositeOperation = 'overlay';
+                    ctx.fillStyle = 'rgba(255, 200, 100, 0.15)'; // ضوء دافئ
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // محاكاة تنعيم الألوان (Posterize effect)
+                    ctx.globalCompositeOperation = 'soft-light';
+                    ctx.drawImage(canvas, 0, 0);
+
+                } else if (filterType === '3d') {
+                    // إضافة إضاءة محيطية (Ambient Occlusion) ولمعان (Glossiness)
+                    ctx.globalCompositeOperation = 'overlay';
+
+                    // تدرج إضاءة دائري 3D
+                    const gradient = ctx.createRadialGradient(
+                        canvas.width / 2, canvas.height / 2, 0,
+                        canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height)
+                    );
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)'); // لمعان في المنتصف
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)'); // تظليل على الأطراف
+
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // زيادة وضوح التفاصيل (Sharpen محاكى)
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                } else if (filterType === 'cyberpunk') {
+                    // أضواء النيون القوية (وردي وأزرق سايبربانك)
+                    ctx.globalCompositeOperation = 'color-dodge';
+
+                    // وهج وردي من اليسار
+                    const gradPink = ctx.createLinearGradient(0, 0, canvas.width, 0);
+                    gradPink.addColorStop(0, 'rgba(255, 0, 128, 0.5)');
+                    gradPink.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = gradPink;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // وهج أزرق/سماوي من اليمين
+                    const gradBlue = ctx.createLinearGradient(canvas.width, 0, 0, 0);
+                    gradBlue.addColorStop(0, 'rgba(0, 255, 255, 0.4)');
+                    gradBlue.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = gradBlue;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // تأثير "خطوط الشاشة" أو الخطأ التقني (Glitch / Scanlines)
+                    ctx.globalCompositeOperation = 'overlay';
+                    for (let y = 0; y < canvas.height; y += 4) {
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+                        ctx.fillRect(0, y, canvas.width, 1);
+                    }
+                }
+
+                // استرجاع وضع الدمج الطبيعي
+                ctx.globalCompositeOperation = 'source-over';
+
+                // حفظ وإرجاع النتيجة الاحترافية كـ Blob
+                canvas.toBlob((blob) => {
+                    resolve(URL.createObjectURL(blob));
+                }, 'image/jpeg', 0.95); // جودة عالية 95%
+            };
+            img.onerror = () => reject(new Error("Image load failed"));
+            img.src = imageSrc;
+        });
     }
 
     // --- إغلاق النوافذ المنبثقة ---
