@@ -130,68 +130,96 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // العملية للاتصال بالذكاء الاصطناعي الحقيقي عبر Hugging Face
+    // تجهيز الصورة للذكاء الاصطناعي الحقيقي (يجب أن تكون بأبعاد محددة مثلاً 512x512)
+    function resizeImageForAI(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                // قص الصورة (Crop) لتملأ المربع بدون تشويه
+                const scale = Math.max(512 / img.width, 512 / img.height);
+                const x = (512 - img.width * scale) / 2;
+                const y = (512 - img.height * scale) / 2;
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                // تصدير الصورة بأعلى جودة
+                canvas.toBlob((blob) => resolve(blob), 'image/png', 1.0);
+            };
+            img.onerror = reject;
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
+    // العملية للاتصال بالذكاء الاصطناعي الحقيقي لتغيير هيكل ومعالم الصورة جذرياً
     async function processImage() {
-        // مفتاحك الشخصي والسري تم دمجه بأمان في الكود
-        const token = "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";
+        // [هام جداً]: الذكاء الاصطناعي الحقيقي الذي "يغير الشكل" يتطلب خوادم (سيرفرات) قوية جداً تعمل بكروت شاشة.
+        // قمت ببرمجة هذا الكود ليتصل بأفضل ذكاء اصطناعي للصور في العالم (Stable Diffusion).
+        // لكي يعمل، كل ما عليك فعله هو الذهاب إلى منصة (platform.stability.ai)، تسجيل الدخول مجاناً، ونسخ الـ API Key الخاص بك ووضعه هنا:
+        const STABILITY_API_KEY = "sk-6dEyCjPPNWkE14FfVNPhc3XeXBlNVdh27AB3wve0TqNav6VH";
+
+        if (!STABILITY_API_KEY || STABILITY_API_KEY === "") {
+            throw new Error("API_KEY_MISSING");
+        }
 
         try {
-            // قراءة الصورة لرفعها
-            const imageBuffer = await selectedFile.arrayBuffer();
+            // 1. تجهيز الصورة وضبط قياسها لتناسب الذكاء الاصطناعي
+            const imageBlob = await resizeImageForAI(selectedFile);
 
-            // اختيار النموذج (Model) بناءً على نوع الفلتر
-            // ملاحظة: نستخدم نماذج متوفرة مجاناً في HF، وإذا كانت "نائمة" سنتحايل على الأمر لكي لا يغضب الزائر
-            let modelId = "stabilityai/stable-diffusion-xl-refiner-1.0"; // نموذج افتراضي للتحسين
-            if (selectedFilter === 'cartoon' || selectedFilter === '3d') {
-                modelId = "timbrooks/instruct-pix2pix"; // نموذج مناسب لتعديل الصور
+            // 2. تحديد الأوامر المتقدمة (Prompts) لتحويل هيكل الصورة بالكامل
+            let promptText = "high quality portrait, masterpiece";
+            if (selectedFilter === 'cartoon') {
+                promptText = "flat 2d animation style, cartoon network, disney toon style, cel shaded, highly detailed character illustration, no background clutter";
+            } else if (selectedFilter === '3d') {
+                promptText = "3d render, pixar style, disney 3d animation, octane render, subsurface scattering, highly detailed, cute 3d CGI character";
+            } else if (selectedFilter === 'cyberpunk') {
+                promptText = "cyberpunk aesthetic, neon lighting, sci-fi futuristic city background, synthwave, highly detailed mechanical parts, cinematic lighting";
             }
 
-            // إرسال الطلب (API Request)
+            // 3. بناء الطلب للـ API
+            const formData = new FormData();
+            formData.append('init_image', imageBlob);
+            formData.append('init_image_mode', 'IMAGE_STRENGTH');
+            formData.append('image_strength', 0.4); // 0.4 تعني تغيير الصورة بمقدار 60% مع الحفاظ على الملامح الأصلية
+            formData.append('text_prompts[0][text]', promptText);
+            formData.append('text_prompts[0][weight]', 1);
+            formData.append('cfg_scale', 7); // قوة الالتزام بالوصف
+            formData.append('samples', 1);
+
+            // 4. إرسال الصورة للسيرفر ليقوم بمعالجتها جذرياً (Image to Image)
             const response = await fetch(
-                "https://api-inference.huggingface.co/models/" + modelId,
+                "https://api.stability.ai/v1/generation/stable-diffusion-v1-6/image-to-image",
                 {
-                    headers: { Authorization: "Bearer " + token },
-                    method: "POST",
-                    body: imageBuffer,
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `Bearer ${STABILITY_API_KEY}`,
+                    },
+                    body: formData,
                 }
             );
 
             if (!response.ok) {
-                // قد يرجع خطأ إذا كان الموديل قيد التحميل المجاني
-                throw new Error("الموديل غير متاح حالياً");
+                const errorText = await response.text();
+                throw new Error(`API Error: ${errorText}`);
             }
 
-            // استلام الصورة الحقيقية
-            const blob = await response.blob();
-            const imageUrl = URL.createObjectURL(blob);
+            // 5. استلام النتيجة الحقيقية
+            const responseJSON = await response.json();
+            const base64Image = responseJSON.artifacts[0].base64;
 
-            resultImage.src = imageUrl;
-            downloadBtn.href = imageUrl;
+            // تحويل البكسلات لملف يمكن عرضه وتحميله
+            const finalImageUrl = `data:image/png;base64,${base64Image}`;
+            resultImage.src = finalImageUrl;
+
+            downloadBtn.href = finalImageUrl;
+            downloadBtn.download = `Al_Photo_Filter_${selectedFilter}_TrueAI.png`;
+            downloadBtn.removeAttribute('target');
 
         } catch (error) {
-            console.log("الـ API الحقيقي يفشل حالياً، سنقوم بمعالجة صورة المستخدم محلياً لمحاكات الفلتر...", error);
-
-            // تأخير بسيط لمحاكاة المعالجة السحابية
-            const delay = Math.floor(Math.random() * 1500) + 1000;
-            await new Promise(resolve => setTimeout(resolve, delay));
-
-            try {
-                // استخدام الصورة المرفوعة وتطبيق فلاتر عليها باستخدام Canvas لضمان أنها نفس صورة المستخدم تماماً
-                const filteredImageUrl = await applyCanvasFilter(imagePreview.src, selectedFilter);
-
-                resultImage.src = filteredImageUrl;
-
-                // إعداد زر التحميل
-                downloadBtn.href = filteredImageUrl;
-                downloadBtn.download = `Al_Photo_Filter_${selectedFilter}.jpg`;
-                downloadBtn.removeAttribute('target');
-            } catch (canvasError) {
-                console.error("فشل معالجة الصورة: ", canvasError);
-                // الخطة البديلة: إرجاع نفس الصورة بدون تعديل
-                resultImage.src = imagePreview.src;
-                downloadBtn.href = imagePreview.src;
-                downloadBtn.download = `Original_${selectedFilter}.jpg`;
-            }
+            console.error("خطأ أثناء تحويل الصورة الحقيقي: ", error);
+            throw error; // سيتم التقاط هذا الخطأ في الدالة الرئيسية لتشغيل الفلاتر (الديمو)
         }
     }
 
