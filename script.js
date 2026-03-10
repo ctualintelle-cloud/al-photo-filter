@@ -172,30 +172,43 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("الذكاء الاصطناعي المجاني نائم أو عليه ضغط، سيتم التبديل لوضع الديمو للحفاظ على تجربة المستخدم...", error);
 
             // في حال فشل الـ API الحقيقي لن يتعطل الموقع، بل سيعرض النتيجة المحاكية بذكاء بعد تأخير بسيط 
-            const delay = Math.floor(Math.random() * 2000) + 4000;
+            const delay = Math.floor(Math.random() * 2000) + 2000;
             await new Promise(resolve => setTimeout(resolve, delay));
 
-            resultImage.src = generateMockResult();
-            downloadBtn.href = resultImage.src;
+            const mockUrl = generateMockResult();
+
+            try {
+                // جلب الصورة المحاكية كـ Blob حتى يعمل زر التحميل بدون مشاكل تعارض النطاقات (CORS)
+                const mockResponse = await fetch(mockUrl);
+                const mockBlob = await mockResponse.blob();
+                const mockObjectURL = URL.createObjectURL(mockBlob);
+
+                resultImage.src = mockObjectURL;
+                downloadBtn.href = mockObjectURL;
+            } catch (fetchError) {
+                // في حال فشل الجلب، نعرض الرابط مباشرة مع فتح التحميل في صفحة جديدة
+                resultImage.src = mockUrl;
+                downloadBtn.href = mockUrl;
+                downloadBtn.target = "_blank";
+            }
         }
     }
 
     function generateMockResult() {
-        // نستخدم خدمات صور عشوائية مجانية تعطي طابع الذكاء الاصطناعي
-        // إذا كان التطبيق حقيقيا سيتم استبدال هذه بـ URL الصورة المراجعة من الـ API
-        const randomId = Math.floor(Math.random() * 1000);
+        // نستخدم خدمة image.pollinations.ai لتوليد صور بالذكاء الاصطناعي مجانا للتمثيل
+        const randomSeed = Math.floor(Math.random() * 100000);
+        let prompt = "beautiful portrait"; // افتراضي
+
         if (selectedFilter === 'cartoon') {
-            // صورة لها طابع كرتوني / رسم
-            return `https://picsum.photos/seed/${randomId}/500/500?grayscale&blur=1`;
+            prompt = "cartoon style anime illustration vibrant";
         } else if (selectedFilter === '3d') {
-            // صورة لها عمق أو طابع 3D 
-            return `https://source.unsplash.com/random/500x500/?3d,render,abstract`;
+            prompt = "3d render pixar disney style cute character";
         } else if (selectedFilter === 'cyberpunk') {
-            // طابع سايبر بانك / نيون
-            return `https://source.unsplash.com/random/500x500/?cyberpunk,neon,night`;
-        } else {
-            return `https://picsum.photos/seed/${randomId}/500/500`;
+            prompt = "cyberpunk neon city futuristic sci-fi portrait";
         }
+
+        // جلب صورة تناسب الفلتر المختار
+        return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=500&height=500&seed=${randomSeed}&nologo=true`;
     }
 
     // --- إغلاق النوافذ المنبثقة ---
