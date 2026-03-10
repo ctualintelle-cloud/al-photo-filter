@@ -184,24 +184,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 promptText = "cyberpunk aesthetic, neon lighting, sci-fi futuristic city background, synthwave, highly detailed mechanical parts, cinematic lighting";
             }
 
-            // 3. بناء الطلب للـ API
+            // 3. بناء الطلب للـ API المحدث V2 SD3
             const formData = new FormData();
-            formData.append('init_image', imageBlob);
-            formData.append('init_image_mode', 'IMAGE_STRENGTH');
-            formData.append('image_strength', 0.4); // 0.4 تعني تغيير الصورة بمقدار 60% مع الحفاظ على الملامح الأصلية
-            formData.append('text_prompts[0][text]', promptText);
-            formData.append('text_prompts[0][weight]', 1);
-            formData.append('cfg_scale', 7); // قوة الالتزام بالوصف
-            formData.append('samples', 1);
+            formData.append('image', imageBlob, 'image.png');
+            formData.append('prompt', promptText);
+            formData.append('mode', 'image-to-image');
+            formData.append('strength', '0.45'); // قوة التغيير 45%
+            formData.append('output_format', 'jpeg');
 
-            // 4. إرسال الصورة للسيرفر ليقوم بمعالجتها جذرياً (Image to Image)
+            // 4. إرسال الصورة للسيرفر ليقوم بمعالجتها جذرياً
             const response = await fetch(
-                "https://api.stability.ai/v1/generation/stable-diffusion-v1-6/image-to-image",
+                "https://api.stability.ai/v2beta/stable-image/generate/sd3",
                 {
                     method: 'POST',
                     headers: {
-                        Accept: 'application/json',
                         Authorization: `Bearer ${STABILITY_API_KEY}`,
+                        Accept: "image/*"
                     },
                     body: formData,
                 }
@@ -212,16 +210,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`API Error: ${errorText}`);
             }
 
-            // 5. استلام النتيجة الحقيقية
-            const responseJSON = await response.json();
-            const base64Image = responseJSON.artifacts[0].base64;
+            // 5. استلام النتيجة الحقيقية كصورة مباشرة
+            const blob = await response.blob();
+            const finalImageUrl = URL.createObjectURL(blob);
 
-            // تحويل البكسلات لملف يمكن عرضه وتحميله
-            const finalImageUrl = `data:image/png;base64,${base64Image}`;
             resultImage.src = finalImageUrl;
 
             downloadBtn.href = finalImageUrl;
-            downloadBtn.download = `Al_Photo_Filter_${selectedFilter}_TrueAI.png`;
+            downloadBtn.download = `Al_Photo_Filter_${selectedFilter}_TrueAI.jpg`;
             downloadBtn.removeAttribute('target');
 
         } catch (error) {
