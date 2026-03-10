@@ -169,46 +169,50 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadBtn.href = imageUrl;
 
         } catch (error) {
-            console.log("الذكاء الاصطناعي المجاني نائم أو عليه ضغط، سيتم التبديل لوضع الديمو للحفاظ على تجربة المستخدم...", error);
+            console.log("الذكاء الاصطناعي الحقيقي يتطلب مفتاح API مدفوع، سيتم استخدام وضع الديمو...", error);
 
-            // في حال فشل الـ API الحقيقي لن يتعطل الموقع، بل سيعرض النتيجة المحاكية بذكاء بعد تأخير بسيط 
-            const delay = Math.floor(Math.random() * 2000) + 2000;
+            // تأخير بسيط لمحاكاة المعالجة
+            const delay = Math.floor(Math.random() * 2000) + 1500;
             await new Promise(resolve => setTimeout(resolve, delay));
 
             const mockUrl = generateMockResult();
 
             try {
-                // جلب الصورة المحاكية كـ Blob حتى يعمل زر التحميل بدون مشاكل تعارض النطاقات (CORS)
+                // جلب الصورة كـ Blob لمنع أخطاء CORS عند التحميل
                 const mockResponse = await fetch(mockUrl);
                 const mockBlob = await mockResponse.blob();
                 const mockObjectURL = URL.createObjectURL(mockBlob);
 
                 resultImage.src = mockObjectURL;
+                // إعداد زر التحميل
                 downloadBtn.href = mockObjectURL;
+                downloadBtn.download = `Al_Photo_Filter_${selectedFilter}.jpg`;
+                downloadBtn.removeAttribute('target');
             } catch (fetchError) {
-                // في حال فشل الجلب، نعرض الرابط مباشرة مع فتح التحميل في صفحة جديدة
+                // خطة بديلة لو فشل الـ Fetch
+                console.error("فشل جلب الصورة كـ Blob: ", fetchError);
                 resultImage.src = mockUrl;
                 downloadBtn.href = mockUrl;
                 downloadBtn.target = "_blank";
+                downloadBtn.download = '';
             }
         }
     }
 
     function generateMockResult() {
-        // نستخدم خدمة image.pollinations.ai لتوليد صور بالذكاء الاصطناعي مجانا للتمثيل
-        const randomSeed = Math.floor(Math.random() * 100000);
-        let prompt = "beautiful portrait"; // افتراضي
+        // استخدام خدمة مستقرة لصور الديمو
+        const randomId = Math.floor(Math.random() * 1000);
+        let url = `https://picsum.photos/seed/${randomId}/500/500`;
 
         if (selectedFilter === 'cartoon') {
-            prompt = "cartoon style anime illustration vibrant";
+            url = `https://picsum.photos/seed/${randomId}/500/500?grayscale&blur=1`;
         } else if (selectedFilter === '3d') {
-            prompt = "3d render pixar disney style cute character";
+            url = `https://picsum.photos/seed/${randomId}/500/500?blur=2`;
         } else if (selectedFilter === 'cyberpunk') {
-            prompt = "cyberpunk neon city futuristic sci-fi portrait";
+            url = `https://picsum.photos/seed/${randomId}/500/500?grayscale`;
         }
 
-        // جلب صورة تناسب الفلتر المختار
-        return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=500&height=500&seed=${randomSeed}&nologo=true`;
+        return url;
     }
 
     // --- إغلاق النوافذ المنبثقة ---
